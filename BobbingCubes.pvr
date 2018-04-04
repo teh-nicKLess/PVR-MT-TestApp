@@ -6,7 +6,7 @@
         <Object at="0.5 -1 -1" at_dir="0" base_name="Headlight_beacon" from="0 0 0" light="light" name_space="__global__" name_suffix="0" persistency="666" pickable="0" scale="1 1 1" type="LightBeacon" up="0 1 0" visible="1">
           <constraint persistency="666"/>
         </Object>
-        <Object accept_root="1" aspect="1" at="4.5 9 3.7" at_dir="1" base_name="Default" far="512" fov="1.0472" from="4.5 10 4" name_space="__global__" name_suffix="0" near="0.1" orthoSize="100" persistency="666" pickable="0" scale="1 1 1" type="Camera" up="0 1 0" visible="1">
+        <Object accept_root="1" aspect="1" at="2 10 1" at_dir="1" base_name="Default" far="512" fov="1.0472" from="2 10 2" name_space="__global__" name_suffix="0" near="0.1" orthoSize="100" persistency="666" pickable="0" scale="1 1 1" type="Camera" up="0 1 0" visible="1">
           <constraint persistency="666"/>
         </Object>
       </Object>
@@ -58,7 +58,8 @@
 	print dev.getName() + "["+ str(key) +"]: " + ("Pressed" if dev.getKeyState(key) else "Released")
 	#print "Position: " + str(dev.getBeacon().getDir())
 	
-	if dev.intersect():
+	caster = dev.getBeacon(key)
+	if dev.intersect(VR.getRoot(), False, caster, [0,0,-1]):
 		target = dev.getIntersected()
 		if target not in VR.boxes: return
 	
@@ -92,17 +93,37 @@
 	
 	return
 	
-	if dev.intersect():
-		if not hasattr(VR, 'color'): VR.color = 'red'
-		if VR.color == 'red': VR.color = 'green'
-		else: VR.color = 'red'
+	"""
+	key = dev.getKey()
 	
+	print dev.getName() + "["+ str(key) +"]: " + ("Pressed" if dev.getKeyState(key) else "Released")
+	#print "Position: " + str(dev.getBeacon().getDir())
+	
+	caster = dev.getBeacon(key)
+	if dev.intersect(VR.getRoot(), False, caster, [0,0,-1]):
 		target = dev.getIntersected()
-		#newMat = VR.greenMat if target.getMaterial() == VR.redMat else VR.redMat
-		#target.setMaterial(newMat)
-		target.setColor(VR.color)
-		target.rotate(0,1,0,0.1)
+		if target not in VR.boxes: return
+	
+		if dev.getState(): # Button is pressed
+			#if (not key in VR.target or VR.target[key] is None or VR.target[key].getName() != target.getName()):
+			VR.target[key] = target
+			print "VR-target[" + str(key) + "] changed."
+			#target.setColor('blue')
+			
+		else: # Button is released
+			if VR.target[key] is None: return
+	
+			if VR.target[key].getName() == target.getName():
+				VR.animateCube(target)
+				newMat = VR.greenMat if target.getMaterial() == VR.redMat else VR.redMat
+				target.setMaterial(newMat)
+				#target.rotate(0,1,0,0.1)
+			else:
+				VR.switchCubes(VR.target[key], target)
+			
+			VR.target[key] = None"""
 </core>
+      <trig type="on_device" dev="multitouch" state="Pressed" param="" key="-1" base_name="trigger" name_space="__global__" name_suffix="13" persistency="666"/>
     </Script>
     <Script base_name="init" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
       <core>
@@ -167,6 +188,11 @@
 	
 	#VR.trackingInit()
 	
+	cam = VR.find('Default')
+	cam.setTransform([2,10,2], [0,0,-1], [0,1,0])
+	
+	VR.find('multitouch_0_av_ray').show()
+	
 	
 </core>
       <trig type="on_device" dev="keyboard" state="Pressed" param="" key="114" base_name="trigger" name_space="__global__" name_suffix="5" persistency="666"/>
@@ -191,7 +217,7 @@
 	cam = VR.find('Default')
 	cam.setTransform([2,10,2], [0,0,-1], [0,1,0])
 	
-	VR.find('multitouch_av_ray').show()
+	VR.find('multitouch_0_av_ray').show()
 </core>
       <trig type="on_device" dev="keyboard" state="Pressed" param="" key="114" base_name="trigger" name_space="__global__" name_suffix="10" persistency="666"/>
     </Script>
@@ -315,6 +341,16 @@
       <arg type="VRPyObjectType" value="0" base_name="cube1" name_space="switchCubes2" name_suffix="0" persistency="666"/>
       <arg type="VRPyObjectType" value="0" base_name="cube2" name_space="switchCubes2" name_suffix="0" persistency="666"/>
     </Script>
+    <Script base_name="test" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+      <core>
+	import VR
+	
+	beacon = dev.getBeacon(2)
+	beacon.setColor('blue')
+	
+	dev.setBeacon(beacon, 0)
+</core>
+    </Script>
     <Script base_name="trackingInit" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
       <core>
 	import VR
@@ -402,6 +438,17 @@
 		
 </core>
       <trig type="on_device" dev="server1" state="Released" param="" key="-1" base_name="trigger" name_space="__global__" name_suffix="8" persistency="666"/>
+    </Script>
+    <Script base_name="update" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+      <core>
+	import VR
+	
+	beacons = VR.find("multitouch_beacons")
+	
+	for beacon in beacons.getChildren():
+		beacon.getChild(0).show()
+</core>
+      <trig type="on_timeout" dev="" state="Pressed" param="100" key="0" base_name="trigger" name_space="__global__" name_suffix="12" persistency="666"/>
     </Script>
   </Scripts>
   <Sockets persistency="666"/>
