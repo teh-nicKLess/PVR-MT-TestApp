@@ -6,7 +6,7 @@
         <Object at="0.5 -1 -1" at_dir="0" base_name="Headlight_beacon" from="0 0 0" light="light" name_space="__global__" name_suffix="0" persistency="666" pickable="0" scale="1 1 1" type="LightBeacon" up="0 1 0" visible="1">
           <constraint persistency="666"/>
         </Object>
-        <Object accept_root="1" aspect="1" at="0 3.5 2" at_dir="0" base_name="Default" far="512" fov="1.0472" from="-0.0337778 10.3927 10.2304" name_space="__global__" name_suffix="0" near="0.1" orthoSize="100" persistency="666" pickable="0" scale="1 1 1" type="Camera" up="0 1 0" visible="1">
+        <Object accept_root="1" aspect="1" at="-0.448694 8.55 0.775779" at_dir="0" base_name="Default" far="512" fov="1.0472" from="-1.23251 8.71575 1.62989" name_space="__global__" name_suffix="0" near="0.1" orthoSize="100" persistency="666" pickable="0" scale="1 1 1" type="Camera" up="0 1 0" visible="1">
           <constraint persistency="666"/>
         </Object>
       </Object>
@@ -14,10 +14,135 @@
   </Objects>
   <Rendering deferred_rendering="0" frustum_culling="1" fxaa="0" hmdd="0" marker="0" occlusion_culling="0" persistency="666" ssao="0" ssao_kernel="4" ssao_noise="4" ssao_radius="0.02" two_sided="1"/>
   <Scripts persistency="666">
-    <Script base_name="Script" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+    <Script base_name="animBlackKey" group="Animations" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
       <core>
 	import VR
+	
+	name = key.getName()
+	pose = key.getPose()
+	pos0 = pose.pos()
+	dir0 = pose.dir()
+	up0 = pose.up()
+#	zStart = cDir[2]
+	
+	if pressed:
+		if name not in VR.pressAnimation:
+			path = VR.Path()
+			path.addPoint(pos0, dir0, [0,0,0], up0)
+		
+			dir1 = dir0 + [0, 0.07, 0]
+			path.addPoint(pos0, dir1, [0,0,0], up0)
+		
+			dir2 = dir0 + [0, 0.14, 0]
+			path.addPoint(pos0, dir1, [0,0,0], up0)
+		
+			path.compute(2)
+		
+			VR.pressAnimation[name] = path
+		else:
+			path = VR.pressAnimation[name]
+	else:
+		if name not in VR.releaseAnimation:
+			path = VR.Path()
+			path.addPoint(pos0, dir0, [0,0,0], up0)
+		
+			dir1 = dir0 - [0, 0.07, 0]
+			path.addPoint(pos0, dir1, [0,0,0], up0)
+		
+			dir2 = dir0 - [0, 0.14, 0]
+			path.addPoint(pos0, dir1, [0,0,0], up0)
+		
+			path.compute(2)
+		
+			VR.releaseAnimation[name] = path
+		else:
+			path = VR.releaseAnimation[name]
+		
+	#TODO: doAnimation
+	#key.animate(path, duration, offset, doOrient?, doLoop)
+	key.animate(path, 0.2, 0, True, False)
 </core>
+      <arg type="VRPyTransformType" value="0" base_name="key" name_space="animBlackKey" name_suffix="0" persistency="666"/>
+      <arg type="int" value="0" base_name="pressed" name_space="animBlackKey" name_suffix="0" persistency="666"/>
+    </Script>
+    <Script base_name="animWhiteKey" group="Animations" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+      <core>
+	import VR
+	
+	name = key.getName()
+	pose = key.getPose()
+	pos0 = pose.pos()
+	dir0 = pose.dir()
+	up0 = pose.up()
+#	zStart = cDir[2]
+	
+	if pressed:
+		if name not in VR.pressAnimation:
+			path = VR.Path()
+			path.addPoint(pos0, dir0, [0,0,0], up0)
+		
+			dir1 = dir0 + [0, 0.1, 0]
+			path.addPoint(pos0, dir1, [0,0,0], up0)
+		
+			dir2 = dir0 + [0, 0.2, 0]
+			path.addPoint(pos0, dir1, [0,0,0], up0)
+		
+			path.compute(2)
+		
+			VR.pressAnimation[name] = path
+		else:
+			path = VR.pressAnimation[name]
+	else:
+		if name not in VR.releaseAnimation:
+			path = VR.Path()
+			path.addPoint(pos0, dir0, [0,0,0], up0)
+		
+			dir1 = dir0 - [0, 0.1, 0]
+			path.addPoint(pos0, dir1, [0,0,0], up0)
+		
+			dir2 = dir0 - [0, 0.2, 0]
+			path.addPoint(pos0, dir1, [0,0,0], up0)
+		
+			path.compute(2)
+		
+			VR.releaseAnimation[name] = path
+		else:
+			path = VR.releaseAnimation[name]
+		
+	#TODO: doAnimation
+	#key.animate(path, duration, offset, doOrient?, doLoop)
+	key.animate(path, 0.2, 0, True, False)
+		
+		
+		
+	'''
+	def callback_animate(dev, torus):
+	import VR
+	
+	if not hasattr(VR, 'p2') or True:	
+		VR.p2 = VR.Path()
+		d = 1.2
+		# position, direction, color, up-vector
+		VR.p2.addPoint([2.5,0,0], [0,0,d], [0,0,0], [0,1,0])
+		VR.p2.addPoint([0,0,2.5], [-d,0,0], [0,0,0], [0,1,0])
+		VR.p2.addPoint([-2.5,0,0], [0,0,-d], [0,0,0], [0,1,0])
+		VR.p2.addPoint([0,0,-2.5], [d,0,0], [0,0,0], [0,1,0])
+		VR.p2.close()
+		VR.p2.compute(80) # do not forget this!
+	
+	def myAnim(t):
+		print t
+		p = VR.p2.getPose(t)
+		torus.setPose(p)
+		if t == 1: print 'end'
+		
+	a = VR.Animation('myAnim')
+	a.setCallback(myAnim)
+	a.setDuration(1)
+	a.start()'''
+</core>
+      <arg type="VRPyTransformType" value="0" base_name="key" name_space="animWhiteKey" name_suffix="0" persistency="666"/>
+      <arg type="int" value="0" base_name="pressed" name_space="animWhiteKey" name_suffix="0" persistency="666"/>
     </Script>
     <Script base_name="animateCube" group="cubeAnim" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
       <core>
@@ -53,173 +178,58 @@
 </core>
       <arg type="VRPyObjectType" value="0" base_name="cube" name_space="animateCube" name_suffix="0" persistency="666"/>
     </Script>
-    <Script base_name="click" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+    <Script base_name="init" group="Inits" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
       <core>
 	import VR
+	import time	
+	
+	# Light
+	if hasattr(VR, 'Lamp'): 
+		VR.Lamp.destroy()
+		del VR.Lamp
+	
+	VR.Lamp = VR.Light('Lamp', 'light')
+	#VR.Lamp.toggleShadows(True)
+	#VR.Lamp.setOn(False)
+	beacon = VR.LightBeacon('Lamp_Beacon')
+	beacon.setTransform([0, 20, 0], [0, -1, 0], [0,1,0])
+	VR.Lamp.setBeacon(beacon)
 
-	
-	key = dev.getKey()
-	
-	print dev.getName() + "["+ str(key) +"]: " + ("Pressed" if dev.getKeyState(key) else "Released")
-	#print "Position: " + str(dev.getBeacon().getDir())
-	
-	caster = dev.getBeacon(key)
-	if dev.intersect(VR.getRoot(), False, caster, [0,0,-1]):
-		target = dev.getIntersected()
-		if target not in VR.boxes: return
-	
-		if dev.getState(): # Button is pressed
-			#if (not key in VR.target or VR.target[key] is None or VR.target[key].getName() != target.getName()):
-			VR.target[key] = target
-			print "VR-target[" + str(key) + "] changed."
-			#target.setColor('blue')
-			
-		else: # Button is released
-			if VR.target[key] is None: return
-	
-			if VR.target[key].getName() == target.getName():
-				VR.animateCube(target)
-				newMat = VR.greenMat if target.getMaterial() == VR.redMat else VR.redMat
-				target.setMaterial(newMat)
-				#target.rotate(0,1,0,0.1)
-			else:
-				VR.switchCubes(VR.target[key], target)
-			
-			VR.target[key] = None
-</core>
-      <trig type="on_device" dev="mouse" state="Released" param="" key="0" base_name="trigger" name_space="__global__" name_suffix="5" persistency="666"/>
-      <trig type="on_device" dev="mouse" state="Pressed" param="" key="0" base_name="trigger" name_space="__global__" name_suffix="6" persistency="666"/>
-      <trig type="on_device" dev="multitouch" state="Released" param="" key="-1" base_name="trigger" name_space="__global__" name_suffix="7" persistency="666"/>
-      <trig type="on_device" dev="multitouch" state="Pressed" param="" key="-1" base_name="trigger" name_space="__global__" name_suffix="9" persistency="666"/>
-    </Script>
-    <Script base_name="click2" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
-      <core>
-	import VR
-	
-	return
-	
-	"""
-	key = dev.getKey()
-	
-	print dev.getName() + "["+ str(key) +"]: " + ("Pressed" if dev.getKeyState(key) else "Released")
-	#print "Position: " + str(dev.getBeacon().getDir())
-	
-	caster = dev.getBeacon(key)
-	if dev.intersect(VR.getRoot(), False, caster, [0,0,-1]):
-		target = dev.getIntersected()
-		if target not in VR.boxes: return
-	
-		if dev.getState(): # Button is pressed
-			#if (not key in VR.target or VR.target[key] is None or VR.target[key].getName() != target.getName()):
-			VR.target[key] = target
-			print "VR-target[" + str(key) + "] changed."
-			#target.setColor('blue')
-			
-		else: # Button is released
-			if VR.target[key] is None: return
-	
-			if VR.target[key].getName() == target.getName():
-				VR.animateCube(target)
-				newMat = VR.greenMat if target.getMaterial() == VR.redMat else VR.redMat
-				target.setMaterial(newMat)
-				#target.rotate(0,1,0,0.1)
-			else:
-				VR.switchCubes(VR.target[key], target)
-			
-			VR.target[key] = None"""
-</core>
-      <trig type="on_device" dev="multitouch" state="Pressed" param="" key="-1" base_name="trigger" name_space="__global__" name_suffix="13" persistency="666"/>
-    </Script>
-    <Script base_name="init" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
-      <core>
-	import VR
-	
-	#TODO: add a floor
-	
-	# Debugging
-	#VR.find("multitouch_av_ray").setVisible(True)
-
-	if hasattr(VR, 'Scene'): VR.Scene.destroy()
-	VR.Scene = VR.Object('Scene', 'light')
-	VR.find('light').addChild(VR.Scene)
+	VR.Scene = VR.Object('Scene')
+	VR.Lamp.addChild(VR.Scene)
 	
 	
 	# Set up camera
 	cam = VR.find('Default')
 	
 	# Setup for the table
-#	cam.setTransform([4.5,15,2], [0,0,-1], [0,1,0])
+	#cam.setTransform([4.5,15,2], [0,0,-1], [0,1,0])
 	
 	# Setup for the screen
-	cam.setTransform([0,13,7r],[0,-9.5,-5],[0,1,0])
+	cam.setTransform([0,13,10],[0,-4,-5],[0,1,0])
 	
-	#VR.find("Default").setPose(camPose)
+	VR.initMaterials()
 	
 	VR.target = {}
-	VR.boxes = []
+	VR.pressAnimation = {}
+	VR.releaseAnimation = {}
 	
-	VR.redMat = VR.Material("RedBox")
-	VR.redMat.setAmbient([0.09,0.03,0.01])
-	VR.redMat.setDiffuse([0.9,0.3,0.1])
-	VR.redMat.setSpecular([0.99,0.8,0.7])
+	VR.whiteKeys = []
+	VR.blackKeys = []
+
 	
-	VR.greenMat = VR.Material("GreenBox")
-	VR.greenMat.setAmbient([0.03,0.09,0.01])
-	VR.greenMat.setDiffuse([0.3,0.9,0.1])
-	VR.greenMat.setSpecular([0.8,0.99,0.7])
+	# Floor
+	floor = VR.Geometry("Floor")
+	floor.setPrimitive("Plane 20 20 1 1")
+	floor.setTransform([0, 0, 0], [0, 1, 0], [0,0,1])
+	floor.setColor("brown")
+	VR.Scene.addChild(floor)
+
 	
-	VR.mats = {}
-	
-	pianoMat = VR.Material("Piano")
-	pianoMat.setAmbient([0.001,0.001,0.001])
-	pianoMat.setDiffuse([0.01,0.01,0.01])
-	pianoMat.setSpecular([0.99,0.99,0.99])
-	VR.mats["Piano"] = pianoMat
-	
-	lightMat = VR.Material("WhiteKey")
-	lightMat.setAmbient([0.1,0.1,0.1])
-	lightMat.setDiffuse([0.999,0.999,0.995])
-	lightMat.setSpecular([0.999,0.999,0.999])
-	
-	VR.redMat = lightMat
-	
-	
-	Nx = 5
-	Ny = 8
-	d = 0.5
-	
-	x = -0.6
-	z = -0.6
-	
-	nWhiteKeys = 52
-	nBlackKeys = 36
-	
-	whiteDim = [0.2, 1]
-	blackDim = [0.18, 0.66]
-	dist = 0.01
-	
-	
-	# Piano Base
-	base = VR.Geometry("Piano Base")
-	w = nWhiteKeys * whiteDim[0] + dist * (nWhiteKeys - 1) + 4 * whiteDim[0]
-	l = 3 * whiteDim[1]
-	h = 0.5
-	
-	x = 0.0
-	z = l / 2.0
-	
-	base.setPrimitive("Box " + str(w) + " " + str(h) + " " + str(l) + " 1 1 1")
-	base.setPosition([x, h/2.0, z])
-	base.setMaterial(VR.mats["Piano"])
-	
-	VR.Scene.addChild(base)
-	
-	
-	#TODO: add keys
-	'''
-	for i in range(nWhiteKeys):
+	VR.initPiano()
 		
-	
+		
+	'''
 	for i in range(Nx):
 		h = 0.2*(1+i)
 		z += h/2
@@ -247,27 +257,199 @@
       <trig type="on_device" dev="keyboard" state="Pressed" param="" key="114" base_name="trigger" name_space="__global__" name_suffix="5" persistency="666"/>
       <trig type="on_scene_load" dev="" state="Pressed" param="" key="0" base_name="trigger" name_space="__global__" name_suffix="7" persistency="666"/>
     </Script>
-    <Script base_name="leapUpdate" group="Leap'n'Tracking" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+    <Script base_name="initMaterials" group="Inits" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
       <core>
 	import VR
 	
-	if hasattr(VR, 'hands'):
-		print "update"
-		hand = VR.hands[0]
-		hand.update(frame)
-		
+	VR.mats = {}
+	
+	pianoMat = VR.Material("Piano")
+	pianoMat.setAmbient([0.001,0.001,0.001])
+	pianoMat.setDiffuse([0.4,0.25,0.1])
+	pianoMat.setSpecular([0.99,0.99,0.99])
+	VR.mats["Piano"] = pianoMat
+	
+	lightMat = VR.Material("WhiteKey")
+	lightMat.setAmbient([0.1,0.1,0.1])
+	lightMat.setDiffuse([0.999,0.999,0.995])
+	lightMat.setSpecular([0.999,0.999,0.999])
+	VR.mats["WhiteKey"] = lightMat
+	
+	darkMat = VR.Material("BlackKey")
+	darkMat.setAmbient([0.01,0.01,0.01])
+	darkMat.setDiffuse([0.1,0.1,0.1])
+	darkMat.setSpecular([0.99,0.99,0.99])
+	VR.mats["BlackKey"] = darkMat
 </core>
-      <arg type="VRPyLeapFrameType" value="0" base_name="frame" name_space="leapUpdate" name_suffix="0" persistency="666"/>
     </Script>
-    <Script base_name="resetCam" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+    <Script base_name="initPiano" group="Inits" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
       <core>
 	import VR
 	
-	cam = VR.find('Default')
-	cam.setTransform([2,10,2], [0,0,-1], [0,1,0])
+	if VR.find("Piano Base") != None:
+		VR.find("Piano Base").destroy()
 	
-	VR.find('multitouch_0_av_ray').show()
+	
+	nWhiteKeys = 52
+	nBlackKeys = 36
+	
+	whiteDim = [0.24, 0.25, 1.5]
+	blackDim = [0.18, 0.35, 1.0]
+	dist = 0.015
+	
+	whiteName = ['A', 'H', 'C', 'D', 'E', 'F', 'G']
+	blackName = ['A#', 'ERR', 'C#', 'D#', 'ERR', 'F#', 'G#']
+	
+	# Piano Base
+	
+	w = (nWhiteKeys + 2) * (whiteDim[0] + dist)
+	l = 2.2 * whiteDim[2]
+	h = 0.4
+	
+	x = 0.0
+	z = 0.0
+	
+	base = VR.Geometry("Piano Base")
+	base.setPrimitive("Box " + str(w) + " " + str(h) + " " + str(l) + " 1 1 1")
+	base.setPosition([x, 8.0, -z])
+	base.setMaterial(VR.mats["Piano"])
+	
+	VR.Scene.addChild(base)
+	
+	stand = VR.Geometry("Piano Stand")
+	stand.setPrimitive("Box " + str(w) + " 10.0 " + str(0.5*l) + " 1 1 1")
+	stand.setPosition([x, -3, -0.25*l])
+	stand.setMaterial(VR.mats["Piano"])
+	base.addChild(stand)
+	
+	
+	# White Keys
+	x = -(whiteDim[0] + dist) * (nWhiteKeys - 1) / 2.0
+	y = 0.325 + whiteDim[1]*0.5
+	z = 0
+	
+	for i in range(nWhiteKeys):
+		# Creates a name according to note and position
+		name = whiteName[i % 7] + "  " + str(i/7) + "  [WK " + str(i) + "]"
+		whiteKey = VR.Geometry(name)
+		whiteKey.setPrimitive("Box " + str(whiteDim[0]) + " " + str(whiteDim[1])
+											+ " " + str(whiteDim[2]) + " 1 1 1")
+											
+		whiteKey.translate([0, -whiteDim[1]*0.5, whiteDim[2]*0.5])
+		whiteKey.applyTransformation()
+					
+		whiteKey.setPosition([x, y, z])
+		whiteKey.setMaterial(VR.mats["WhiteKey"])
+		
+		base.addChild(whiteKey)
+		
+		VR.whiteKeys.append(whiteKey)
+		
+		x = x + whiteDim[0] + dist
+		
+	# Black Keys
+	x = -(whiteDim[0] + dist) * (nWhiteKeys - 2) / 2.0
+	y = 0.375 + blackDim[1]*0.5
+	z = 0
+	
+	counter = 0
+	for i in range(nWhiteKeys - 1):
+		if ((i - 1) % 7 != 0 and (i + 3) % 7 != 0):
+			# Creates a name according to note and position
+			name = blackName[i % 7] + " " + str(i/7) + "  [BK " + str(i - counter) + "]"
+			blackKey = VR.Geometry(name)
+			blackKey.setPrimitive("Box " + str(blackDim[0]) + " " + str(blackDim[1])
+												+ " " + str(blackDim[2]) + " 1 1 1")
+												
+			blackKey.translate([0, -blackDim[1]*0.5, blackDim[2]*0.5])
+			blackKey.applyTransformation()
+			
+			blackKey.setPosition([x, y, z])
+			blackKey.setMaterial(VR.mats["BlackKey"])
+		
+			base.addChild(blackKey)
+			
+			VR.blackKeys.append(blackKey)
+		else:
+			counter += 1
+		
+		x = x + whiteDim[0] + dist
 </core>
+    </Script>
+    <Script base_name="keyDrag" group="Interactions" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+      <core>
+	import VR
+</core>
+      <trig type="on_timeout" dev="" state="Pressed" param="20" key="0" base_name="trigger" name_space="__global__" name_suffix="9" persistency="666"/>
+    </Script>
+    <Script base_name="keyPress" group="Interactions" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+      <core>
+	import VR
+
+	
+	key = dev.getKey()
+
+	#print dev.getName() + "["+ str(key) +"]: " + ("Pressed" if dev.getKeyState(key) else "Released")
+	#print "Position: " + str(dev.getBeacon().getDir())
+	
+	caster = dev.getBeacon(key)
+	if dev.intersect(VR.getRoot(), False, caster, [0,0,-1]):
+		target = dev.getIntersected()
+		VR.target[key] = target
+		
+		if target in VR.whiteKeys: 
+			print target.getName()
+			VR.animWhiteKey(target, True)
+		elif target in VR.blackKeys:
+			print target.getName()
+			VR.animBlackKey(target, True)
+	
+		'''if dev.getState(): # Button is pressed
+			#if (not key in VR.target or VR.target[key] is None or VR.target[key].getName() != target.getName()):
+			VR.target[key] = target
+			print "VR-target[" + str(key) + "] changed."
+			#target.setColor('blue')
+			
+		else: # Button is released
+			if VR.target[key] is None: return
+	
+			if VR.target[key].getName() == target.getName():
+				VR.animateCube(target)
+				newMat = VR.greenMat if target.getMaterial() == VR.redMat else VR.redMat
+				target.setMaterial(newMat)
+				#target.rotate(0,1,0,0.1)
+			else:
+				VR.switchCubes(VR.target[key], target)
+			
+			VR.target[key] = None
+			'''
+</core>
+      <trig type="on_device" dev="mouse" state="Pressed" param="" key="0" base_name="trigger" name_space="__global__" name_suffix="5" persistency="666"/>
+      <trig type="on_device" dev="multitouch" state="Pressed" param="" key="-1" base_name="trigger" name_space="__global__" name_suffix="7" persistency="666"/>
+    </Script>
+    <Script base_name="keyRelease" group="Interactions" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+      <core>
+	import VR
+
+	
+	key = dev.getKey()
+
+
+	caster = dev.getBeacon(key)
+	
+	if key in VR.target:
+		target = VR.target[key]
+		
+		if target in VR.whiteKeys:
+			VR.animWhiteKey(target, False)
+		elif target in VR.blackKeys:
+			VR.animBlackKey(target, False)
+			
+		VR.target[key] = None
+	
+</core>
+      <trig type="on_device" dev="mouse" state="Released" param="" key="0" base_name="trigger" name_space="__global__" name_suffix="6" persistency="666"/>
+      <trig type="on_device" dev="multitouch" state="Released" param="" key="-1" base_name="trigger" name_space="__global__" name_suffix="8" persistency="666"/>
     </Script>
     <Script base_name="switchCubes" group="cubeAnim" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
       <core>
@@ -389,118 +571,9 @@
       <arg type="VRPyObjectType" value="0" base_name="cube1" name_space="switchCubes2" name_suffix="0" persistency="666"/>
       <arg type="VRPyObjectType" value="0" base_name="cube2" name_space="switchCubes2" name_suffix="0" persistency="666"/>
     </Script>
-    <Script base_name="test" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
-      <core>
-	import VR
-	
-	beacon = dev.getBeacon(2)
-	beacon.setColor('blue')
-	
-	dev.setBeacon(beacon, 0)
-</core>
-    </Script>
-    <Script base_name="trackingInit" group="Leap'n'Tracking" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
-      <core>
-	import VR
-	
-	server = VR.find('server1')
-	
-	leap = VR.find('leap')
-	#leap.clearFrameCallbacks()
-	#leap.registerFrameCallback(VR.leapUpdate)
-	
-	ID = server.openWebSocket('ws://localhost:5005', 'tracking-protocol')
-	print 'connect to head tracking:', ID
-	
-	#ID = server.openWebSocket('ws://localhost:6437/v6.json')
-	#server.answer(ID, '{\"background\": true}')
-	#print 'connect to leap tracking:', ID
-	
-	#if hasattr(VR, 'hands'): VR.hands.destroy()
-	#VR.hand = VR.Geometry('hand', 'light')
-	#VR.hand.setPrimitive('Box 0.1 0.02 0.15 1 1 1')
-	#hand = VR.HandGeo('hand')
-	#VR.find('light').addChild(hand)
-	
-	#VR.hands = [hand]
-	
-	handGeo = VR.HandGeo('handgeo')
-	handGeo.connectToLeap(leap)
-	VR.find('light').addChild(handGeo)
-	
-	VR.leap = [leap, handGeo]
-	
-
-</core>
-    </Script>
-    <Script base_name="trackingUpdate" group="Leap'n'Tracking" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
-      <core>
-	import VR, json
-	from VR.Math import Vec3
-	
-	m = dev.getMessage()
-			
-	def applyHead(v, p, inverted, p0):
-		if p[0] == 0: return
-		
-		if inverted: 
-			p = (Vec3([p[1], p[2], -p[0]])) - p0
-			p = [-p[0], p[1], -p[2]]
-		else:
-			p = (Vec3([p[1], p[2], -p[0]])) - p0
-			
-		v.getUser().setFrom(p)
-		#print p[0]-0.357
-		#print p[2]-0.2
-		#print p[0] - v.getPose().pos()[0]
-	
-	if m.startswith('{ "positions"'): # head tracking
-		data = json.loads( dev.getMessage() )
-		setup = VR.getSetup()
-		user = VR.getRoot().findAll('view_user')
-		positions = [ p['position'] for p in data['positions'] ]
-		
-		#print 'heads', positions
-		applyHead(setup.getView(3), positions[0], False, [0.357,0,0.2])
-		applyHead(setup.getView(2), positions[1], False, [-0.357,0,0.2])
-		applyHead(setup.getView(1), positions[2], True, [0.357,0,-0.2])
-		applyHead(setup.getView(0), positions[3], True, [-0.357,0,-0.2])
-		
-	#else: # leap tracking
-	#	data = json.loads( dev.getMessage() )
-	#	#print data
-	#	hands = data['hands']
-	#
-	#	if len(hands) == 0: return
-	#	hand = hands[0]
-	#
-	#	s = hand['grabStrength']
-	#	d = hand['direction']
-	#	u = hand['palmNormal']
-	#	p = hand['stabilizedPalmPosition']
-	#
-	#	p = Vec3(p)*0.001
-	#
-	#	VR.hand.setPose(p,d,u)
-	#	#print p
-		
-</core>
-      <trig type="on_device" dev="server1" state="Released" param="" key="-1" base_name="trigger" name_space="__global__" name_suffix="8" persistency="666"/>
-    </Script>
-    <Script base_name="update" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
-      <core>
-	import VR
-	
-	beacons = VR.find("multitouch_beacons")
-	
-	for beacon in beacons.getChildren():
-		beacon.getChild(0).show()
-</core>
-      <trig type="on_timeout" dev="" state="Pressed" param="100" key="0" base_name="trigger" name_space="__global__" name_suffix="12" persistency="666"/>
-    </Script>
   </Scripts>
   <Sockets persistency="666"/>
-  <Background color="0.739269 0.842603 1" format=".png" path="" persistency="666" type="3"/>
+  <Background color="0.739269 0.842603 1" format=".jpg" path="./gfx/skybox/sky" persistency="666" type="2"/>
   <Navigation active="Orbit" persistency="666"/>
   <Materials persistency="666"/>
   <Semantics persistency="666"/>
