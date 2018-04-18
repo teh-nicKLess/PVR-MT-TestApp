@@ -6,7 +6,7 @@
         <Object at="0.5 -1 -1" at_dir="0" base_name="Headlight_beacon" from="0 0 0" light="light" name_space="__global__" name_suffix="0" persistency="666" pickable="0" scale="1 1 1" type="LightBeacon" up="0 1 0" visible="1">
           <constraint persistency="666"/>
         </Object>
-        <Object accept_root="1" aspect="1" at="-0.448694 8.55 0.775779" at_dir="0" base_name="Default" far="512" fov="1.0472" from="-1.23251 8.71575 1.62989" name_space="__global__" name_suffix="0" near="0.1" orthoSize="100" persistency="666" pickable="0" scale="1 1 1" type="Camera" up="0 1 0" visible="1">
+        <Object accept_root="1" aspect="1" at="-3.21319 8.54089 -1.90735e-06" at_dir="0" base_name="Default" far="512" fov="1.0472" from="-1.36916 12.021 5.13215" name_space="__global__" name_suffix="0" near="0.1" orthoSize="100" persistency="666" pickable="0" scale="1 1 1" type="Camera" up="0 1 0" visible="1">
           <constraint persistency="666"/>
         </Object>
       </Object>
@@ -14,7 +14,7 @@
   </Objects>
   <Rendering deferred_rendering="0" frustum_culling="1" fxaa="0" hmdd="0" marker="0" occlusion_culling="0" persistency="666" ssao="0" ssao_kernel="4" ssao_noise="4" ssao_radius="0.02" two_sided="1"/>
   <Scripts persistency="666">
-    <Script base_name="animBlackKey" group="Animations" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+    <Script base_name="animKey" group="Animations" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
       <core>
 	import VR
 	
@@ -24,17 +24,23 @@
 	dir0 = pose.dir()
 	up0 = pose.up()
 #	zStart = cDir[2]
+
+	dirNormal  = [0,0,-1]
+	dirPressed = [0,0.1, -1]
 	
+	path = VR.Path()
 	if pressed:
 		if name not in VR.pressAnimation:
-			path = VR.Path()
-			path.addPoint(pos0, dir0, [0,0,0], up0)
+			
+			path.addPoint(pos0, dirNormal, [0,0,0], up0)
 		
-			dir1 = dir0 + [0, 0.07, 0]
-			path.addPoint(pos0, dir1, [0,0,0], up0)
+			dirHalf = [0,0,0]
+			for i in range(3):
+				dirHalf[i] = (dirNormal[i] + dirPressed[i]) * 0.5
+			
+			path.addPoint(pos0, dirHalf, [0,0,0], up0)
 		
-			dir2 = dir0 + [0, 0.14, 0]
-			path.addPoint(pos0, dir1, [0,0,0], up0)
+			path.addPoint(pos0, dirPressed, [0,0,0], up0)
 		
 			path.compute(2)
 		
@@ -44,13 +50,15 @@
 	else:
 		if name not in VR.releaseAnimation:
 			path = VR.Path()
-			path.addPoint(pos0, dir0, [0,0,0], up0)
+			path.addPoint(pos0, dirPressed, [0,0,0], up0)
 		
-			dir1 = dir0 - [0, 0.07, 0]
-			path.addPoint(pos0, dir1, [0,0,0], up0)
+			dirHalf = [0,0,0]
+			for i in range(3):
+				dirHalf[i] = (dirNormal[i] + dirPressed[i]) * 0.5
+			
+			path.addPoint(pos0, dirHalf, [0,0,0], up0)
 		
-			dir2 = dir0 - [0, 0.14, 0]
-			path.addPoint(pos0, dir1, [0,0,0], up0)
+			path.addPoint(pos0, dirNormal, [0,0,0], up0)
 		
 			path.compute(2)
 		
@@ -60,60 +68,39 @@
 		
 	#TODO: doAnimation
 	#key.animate(path, duration, offset, doOrient?, doLoop)
-	key.animate(path, 0.2, 0, True, False)
-</core>
-      <arg type="VRPyTransformType" value="0" base_name="key" name_space="animBlackKey" name_suffix="0" persistency="666"/>
-      <arg type="int" value="0" base_name="pressed" name_space="animBlackKey" name_suffix="0" persistency="666"/>
-    </Script>
-    <Script base_name="animWhiteKey" group="Animations" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
-      <core>
-	import VR
-	
-	name = key.getName()
-	pose = key.getPose()
-	pos0 = pose.pos()
-	dir0 = pose.dir()
-	up0 = pose.up()
-#	zStart = cDir[2]
-	
+	key.animate(path, 0.1, 0, True, False)
+		
+	'''
 	if pressed:
-		if name not in VR.pressAnimation:
-			path = VR.Path()
-			path.addPoint(pos0, dir0, [0,0,0], up0)
+		path.addPoint(pos0, dir0, [0,0,0], up0)
+	
+		dirHalf = [0,0,0]
+		for i in range(3):
+			dirHalf[i] = (dir0[i] + dirPressed[i]) * 0.5
 		
-			dir1 = dir0 + [0, 0.1, 0]
-			path.addPoint(pos0, dir1, [0,0,0], up0)
-		
-			dir2 = dir0 + [0, 0.2, 0]
-			path.addPoint(pos0, dir1, [0,0,0], up0)
-		
-			path.compute(2)
-		
-			VR.pressAnimation[name] = path
-		else:
-			path = VR.pressAnimation[name]
+		path.addPoint(pos0, dirHalf, [0,0,0], up0)
+	
+		path.addPoint(pos0, dirPressed, [0,0,0], up0)
+	
+		path.compute(2)
+		animDist = abs(dir0[1] - dirPressed[1])
 	else:
-		if name not in VR.releaseAnimation:
-			path = VR.Path()
-			path.addPoint(pos0, dir0, [0,0,0], up0)
+		path.addPoint(pos0, dir0, [0,0,0], up0)
+	
+		dirHalf = [0,0,0]
+		for i in range(3):
+			dirHalf[i] = (dirNormal[i] + dir0[i]) * 0.5
 		
-			dir1 = dir0 - [0, 0.1, 0]
-			path.addPoint(pos0, dir1, [0,0,0], up0)
+		path.addPoint(pos0, dirHalf, [0,0,0], up0)
+	
+		path.addPoint(pos0, dirNormal, [0,0,0], up0)
+	
+		path.compute(2)
+		animDist = abs(dir0[1] - dirNormal[1])
 		
-			dir2 = dir0 - [0, 0.2, 0]
-			path.addPoint(pos0, dir1, [0,0,0], up0)
-		
-			path.compute(2)
-		
-			VR.releaseAnimation[name] = path
-		else:
-			path = VR.releaseAnimation[name]
-		
-	#TODO: doAnimation
 	#key.animate(path, duration, offset, doOrient?, doLoop)
-	key.animate(path, 0.2, 0, True, False)
-		
-		
+	key.animate(path, max(animDist, 0.01), 0, True, False)
+	'''	
 		
 	'''
 	def callback_animate(dev, torus):
@@ -141,42 +128,8 @@
 	a.setDuration(1)
 	a.start()'''
 </core>
-      <arg type="VRPyTransformType" value="0" base_name="key" name_space="animWhiteKey" name_suffix="0" persistency="666"/>
-      <arg type="int" value="0" base_name="pressed" name_space="animWhiteKey" name_suffix="0" persistency="666"/>
-    </Script>
-    <Script base_name="animateCube" group="cubeAnim" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
-      <core>
-	import VR
-	
-	pose = cube.getPose()
-	cPos = pose.pos()
-	cDir = pose.dir()
-	zStart = cDir[2]
-	cUp = pose.up()
-	
-	path = VR.Path()
-	# position, direction, color, up-vector
-	path.addPoint(cPos, cDir, [0,0,0], cUp)
-	path.addPoint([cPos[0],cPos[1]-0.7,cPos[2]], cDir, [0,0,0], cUp)
-	
-	cDir = [cDir[0]+zStart,cDir[1],cDir[2]]
-	path.addPoint([cPos[0],cPos[1]-0.9,cPos[2]], cDir, [0,0,0], cUp)
-	
-	cDir = [cDir[0],cDir[1],cDir[2]-zStart]
-	path.addPoint([cPos[0],cPos[1]-1,cPos[2]], cDir, [0,0,0], cUp)
-	
-	cDir = [cDir[0],cDir[1],cDir[2]-zStart]
-	path.addPoint([cPos[0],cPos[1]-0.9,cPos[2]], cDir, [0,0,0], cUp)
-	
-	cDir = [cDir[0]-zStart,cDir[1],cDir[2]]
-	path.addPoint([cPos[0],cPos[1]-0.7,cPos[2]], cDir, [0,0,0], cUp)
-	
-	path.addPoint(cPos, cDir, [cDir[0],cDir[1],cDir[2]+2], cUp)
-	path.compute(2)
-	
-	cube.animate(path, 0.5, 0, True)
-</core>
-      <arg type="VRPyObjectType" value="0" base_name="cube" name_space="animateCube" name_suffix="0" persistency="666"/>
+      <arg type="VRPyTransformType" value="0" base_name="key" name_space="animKey" name_suffix="0" persistency="666"/>
+      <arg type="int" value="0" base_name="pressed" name_space="animKey" name_suffix="0" persistency="666"/>
     </Script>
     <Script base_name="init" group="Inits" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
       <core>
@@ -294,6 +247,7 @@
 	nBlackKeys = 36
 	
 	whiteDim = [0.24, 0.25, 1.5]
+	lipRadius = 0.016
 	blackDim = [0.18, 0.35, 1.0]
 	dist = 0.015
 	
@@ -328,18 +282,28 @@
 	y = 0.325 + whiteDim[1]*0.5
 	z = 0
 	
+	w, h, l = whiteDim
+	
 	for i in range(nWhiteKeys):
 		# Creates a name according to note and position
 		name = whiteName[i % 7] + "  " + str(i/7) + "  [WK " + str(i) + "]"
 		whiteKey = VR.Geometry(name)
-		whiteKey.setPrimitive("Box " + str(whiteDim[0]) + " " + str(whiteDim[1])
-											+ " " + str(whiteDim[2]) + " 1 1 1")
+		whiteKey.setPrimitive("Box " + str(w) +" "+ str(h) +" "+ str(l) +" 1 1 1")
 											
-		whiteKey.translate([0, -whiteDim[1]*0.5, whiteDim[2]*0.5])
+		whiteKey.translate([0, -h*0.5, l*0.5])
 		whiteKey.applyTransformation()
 					
 		whiteKey.setPosition([x, y, z])
 		whiteKey.setMaterial(VR.mats["WhiteKey"])
+		
+		# the rounded lip on the front of the white key
+		lip = VR.Geometry("Lip " + str(i))
+		lip.setPrimitive("Cylinder "+str(w)+" "+str(lipRadius)+" 8 1 1 1")
+		lip.setPosition([0, -lipRadius, z+l])
+		lip.setUp([1,0,0])
+		lip.setMaterial(VR.mats["WhiteKey"])
+		
+		whiteKey.addChild(lip)
 		
 		base.addChild(whiteKey)
 		
@@ -397,12 +361,16 @@
 		target = dev.getIntersected()
 		VR.target[key] = target
 		
-		if target in VR.whiteKeys: 
+		if target in VR.whiteKeys or target in VR.blackKeys:
+			print target.getName()
+			VR.animKey(target, True)
+		
+		'''if target in VR.whiteKeys: 
 			print target.getName()
 			VR.animWhiteKey(target, True)
 		elif target in VR.blackKeys:
 			print target.getName()
-			VR.animBlackKey(target, True)
+			VR.animBlackKey(target, True)'''
 	
 		'''if dev.getState(): # Button is pressed
 			#if (not key in VR.target or VR.target[key] is None or VR.target[key].getName() != target.getName()):
@@ -440,136 +408,18 @@
 	if key in VR.target:
 		target = VR.target[key]
 		
-		if target in VR.whiteKeys:
+		'''if target in VR.whiteKeys:
 			VR.animWhiteKey(target, False)
 		elif target in VR.blackKeys:
-			VR.animBlackKey(target, False)
+			VR.animBlackKey(target, False)'''
+		if target in VR.whiteKeys or target in VR.blackKeys:
+			VR.animKey(target, False)	
 			
 		VR.target[key] = None
 	
 </core>
       <trig type="on_device" dev="mouse" state="Released" param="" key="0" base_name="trigger" name_space="__global__" name_suffix="6" persistency="666"/>
       <trig type="on_device" dev="multitouch" state="Released" param="" key="-1" base_name="trigger" name_space="__global__" name_suffix="8" persistency="666"/>
-    </Script>
-    <Script base_name="switchCubes" group="cubeAnim" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
-      <core>
-	import VR
-	import math
-	
-	pose1 = cube1.getPose()
-	pos1 = pose1.pos()
-	dir1 = pose1.dir()
-
-	pose2 = cube2.getPose()
-	pos2 = pose2.pos()
-	dir2 = pose2.dir()
-	
-	up = [0,1,0]
-	col = [0,0,0]
-	
-	xDist = pos2[0] - pos1[0]
-	zDist = pos2[2] - pos1[2]
-	dist = math.sqrt(xDist**2 + zDist**2)
-	
-	pos1a = [pos1[0]*0.75+pos2[0]*0.25, 4.5, pos1[2]*0.75+pos2[2]*0.25]
-	pos1b = [(pos1[0]+pos2[0])*0.5, 6, (pos1[2]+pos2[2])*0.5]
-	pos1c = [pos1[0]*0.25+pos2[0]*0.75, 4.5, pos1[2]*0.25+pos2[2]*0.75]
-	path1 = VR.Path()
-	# position, direction, color, up-vector
-	path1.addPoint(pos1, [0,1,0], col, up)
-	#path1.addPoint(pos1a, dir1, col, up)
-	path1.addPoint(pos1b, [xDist/dist,0,zDist/dist], col, up)
-	#path1.addPoint(pos1c, dir1, col, up)
-	path1.addPoint(pos2, [0,-1,0], col, up)
-	path1.compute(20)
-	
-	pos2a = [pos1[0]*0.25+pos2[0]*0.75, -2.5, pos1[2]*0.25+pos2[2]*0.75]
-	pos2b = [(pos1[0]+pos2[0])*0.5, -4, (pos1[2]+pos2[2])*0.5]
-	pos2c = [pos1[0]*0.75+pos2[0]*0.25, -2.5, pos1[2]*0.75+pos2[2]*0.25]
-	path2 = VR.Path()
-	# position, direction, color, up-vector
-	path2.addPoint(pos2, [0,-1,0], col, up)
-	#pos2h = [(pos1[0]+pos2[0])/2.0, -2, (pos1[2]+pos2[2])/2.0]
-	#path2.addPoint(pos2h, dir2, col, up)
-	#path2.addPoint(pos2a, dir1, col, up)
-	path2.addPoint(pos2b, [-xDist/dist,0,-zDist/dist], col, up)
-	#path2.addPoint(pos2c, dir1, col, up)
-	path2.addPoint(pos1, [0,1,0], col, up)
-	path2.compute(20)
-	#print path2.getPositions()
-	
-	cube1.animate(path1, 1, 0, False)
-	#cube1.setPosition(pos2)
-	cube2.animate(path2, 1, 0, False)
-	#cube2.setPosition(pos1)
-</core>
-      <arg type="VRPyObjectType" value="0" base_name="cube1" name_space="switchCubes" name_suffix="0" persistency="666"/>
-      <arg type="VRPyObjectType" value="0" base_name="cube2" name_space="switchCubes" name_suffix="0" persistency="666"/>
-    </Script>
-    <Script base_name="switchCubes2" group="cubeAnim" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
-      <core>
-	import VR
-	import math
-	
-	pose1 = cube1.getPose()
-	pos1 = pose1.pos()
-	dir1 = pose1.dir()
-
-	pose2 = cube2.getPose()
-	pos2 = pose2.pos()
-	dir2 = pose2.dir()
-	
-	up = [0,1,0]
-	col = [0,0,0]
-	
-	xDist = pos2[0] - pos1[0]
-	zDist = pos2[2] - pos1[2]
-	dist = math.sqrt(xDist**2 + zDist**2)
-	
-	path1 = VR.Path()
-	# position, direction, color, up-vector
-	path1.addPoint(pos1, [0,1,0], col, up)
-	path1.addPoint([pos1[0], 4, pos1[2]], [0,1,0], col, up)
-	
-	#dir1a = [,0,]
-	path1.addPoint([pos1[0], 4, pos1[2]], dir1a, col, up)
-	
-	pos1b = [(pos1[0]+pos2[0])*0.5 + zDist/dist * 2,
-			4,
-			(pos1[2]+pos2[2])*0.5 + xDist/dist * 2]		
-	path1.addPoint(pos1b, dir1, col, up)
-
-	
-	path1.addPoint([pos2[0], 4, pos2[2]], dir1, col, up)
-	#path1.addPoint([pos2[0], 4, pos2[2]], dir1, col, up)
-	path1.addPoint(pos2, dir1, col, up)
-	path1.compute(4)
-	
-	
-	path2 = VR.Path()
-	# position, direction, color, up-vector
-	path2.addPoint(pos2, dir2, col, up)
-	path2.addPoint([pos2[0], 4, pos2[2]], dir2, col, up)
-	#path2.addPoint([pos2[0], 4, pos2[2]], dir2, col, up)
-	
-	pos2b = [(pos1[0]+pos2[0])*0.5 - zDist/dist * 2,
-			4,
-			(pos1[2]+pos2[2])*0.5 - xDist/dist * 2]		
-	path2.addPoint(pos2b, dir2, col, up)
-	
-	path2.addPoint([pos1[0], 4, pos1[2]], dir2, col, up)
-	#path2.addPoint([pos1[0], 4, pos1[2]], dir2, col, up)
-	path2.addPoint(pos1, dir2, col, up)
-	path2.compute(2)
-
-
-	cube1.animate(path1, 1, 0, True)
-	#cube1.setPosition(pos2)
-	cube2.animate(path2, 1, 0, True)
-	#cube2.setPosition(pos1)
-</core>
-      <arg type="VRPyObjectType" value="0" base_name="cube1" name_space="switchCubes2" name_suffix="0" persistency="666"/>
-      <arg type="VRPyObjectType" value="0" base_name="cube2" name_space="switchCubes2" name_suffix="0" persistency="666"/>
     </Script>
   </Scripts>
   <Sockets persistency="666"/>
