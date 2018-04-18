@@ -6,7 +6,7 @@
         <Object at="0.5 -1 -1" at_dir="0" base_name="Headlight_beacon" from="0 0 0" light="light" name_space="__global__" name_suffix="0" persistency="666" pickable="0" scale="1 1 1" type="LightBeacon" up="0 1 0" visible="1">
           <constraint persistency="666"/>
         </Object>
-        <Object accept_root="1" aspect="1" at="0.40997 8.45 1.3212" at_dir="0" base_name="Default" far="512" fov="1.0472" from="-1.31194 10.4944 6.42964" name_space="__global__" name_suffix="0" near="0.1" orthoSize="100" persistency="666" pickable="0" scale="1 1 1" type="Camera" up="0 1 0" visible="1">
+        <Object accept_root="1" aspect="1" at="-0.325458 10 -0.473708" at_dir="0" base_name="Default" far="512" fov="1.0472" from="-0.243947 17.189 3.89043" name_space="__global__" name_suffix="0" near="0.1" orthoSize="100" persistency="666" pickable="0" scale="1 1 1" type="Camera" up="0 1 0" visible="1">
           <constraint persistency="666"/>
         </Object>
       </Object>
@@ -21,7 +21,7 @@
 	class PianoKey:
 		def __init__(self, name, freq, isWhite):
 			self.sound = VR.Sound()
-			self.state = 0
+			self.state = 0.0
 			self.name = name
 			self.freq = freq
 			self.isWhite = isWhite
@@ -60,18 +60,22 @@
       <core>
 	import VR
 	
-	name = key.getName()
+	geom = key.geom
+	name = geom.getName()
 	
 	if pressed:
 		if name not in VR.pressAnimation:
-			VR.createAnimPath(key, pressed)
+			VR.createAnimPath(geom, pressed)
 			
+		
 		path = VR.pressAnimation[name]
-				
-		def pressAnim(t):
-			
-			key.setPose(path.getPose(t))
-			if t == 1: VR.playSound(key.getChildIndex())
+		
+		def pressAnim(t):		
+			geom.setPose(path.getPose(t))
+			key.state = t
+			#if t == 1: 
+			#	print key.freq
+			#	VR.playSound(key.freq)
 		
 		anim = VR.Animation('Press ' + name)
 		anim.setCallback(pressAnim)
@@ -79,12 +83,13 @@
 		anim.start()
 	else:
 		if name not in VR.releaseAnimation:
-			VR.createAnimPath(key, pressed)
+			VR.createAnimPath(geom, pressed)
 		
 		path = VR.releaseAnimation[name]
 			
 		def releaseAnim(t):
-			key.setPose(path.getPose(t))
+			geom.setPose(path.getPose(t))
+			key.state = 1 - t
 		
 		anim = VR.Animation('Release ' + name)
 		anim.setCallback(releaseAnim)
@@ -92,7 +97,7 @@
 		anim.start()
 
 </core>
-      <arg type="VRPyTransformType" value="0" base_name="key" name_space="animKeyCB" name_suffix="0" persistency="666"/>
+      <arg type="VRPyObjectType" value="0" base_name="key" name_space="animKeyCB" name_suffix="0" persistency="666"/>
       <arg type="int" value="0" base_name="pressed" name_space="animKeyCB" name_suffix="0" persistency="666"/>
     </Script>
     <Script base_name="createAnimPath" group="Animations" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
@@ -170,7 +175,7 @@
 	VR.pressAnimation = {}
 	VR.releaseAnimation = {}
 	
-	VR.keys = []
+	VR.keys = {}
 
 	
 	# Floor
@@ -270,7 +275,7 @@
 	x=y=z=w=h=l = 0.0
 	whiteKey = False
 	
-	root2 = 2**(1/12)
+	root2 = 2.0**(1/12.0)
 	
 	for i in range(nKeys):
 		
@@ -291,7 +296,7 @@
 		kGeom.setPosition([x, y, z])
 		
 		base.addChild(kGeom)
-		VR.keys.append(kGeom)
+		VR.keys[name] = k
 		
 		if whiteKey:
 			whitePos[0] += w + dist
@@ -322,9 +327,10 @@
 		target = dev.getIntersected()
 		VR.target[key] = target
 		
-		if target in VR.keys:
-			print target.getName()
-			VR.animKeyCB(target, True)
+		name = target.getName()
+		if name in VR.keys:
+			print name
+			VR.animKeyCB(VR.keys[name], True)
 		
 		'''if target in VR.whiteKeys: 
 			print target.getName()
@@ -348,9 +354,10 @@
 	
 	if key in VR.target:
 		target = VR.target[key]
-
-		if target in VR.keys:
-			VR.animKeyCB(target, False)	
+			
+		name = target.getName()
+		if name in VR.keys:
+			VR.animKeyCB(VR.keys[name], False)
 			
 		VR.target[key] = None
 	
@@ -362,24 +369,23 @@
       <core>
 	import VR
 	
-	from math import sin
+	#from math import sin
 	
-	def playKey(k):
-		# A4 440
-		Ac = 32760
-		wc = 440
-		pc = 0
+	# A4 440
+	Ac = 32760
+	wc = 440
+	pc = 0
+
+	Am = 0
+	wm = 32
+	pm = 0
+
+	T = 0.4
 	
-		Am = 0
-		wm = 32
-		pm = 0
+	#f = wc*(1.059463)**(k)
+	sound.synthesize(Ac, freq, pc, Am, wm, pm, duration)
+	#print freq
 	
-		T = 0.4
-		
-		f = wc*(1.059463)**(k)
-		VR.piano.synthesize(Ac, f, pc, Am, wm, pm, T)
-	
-	playKey(k)
 	"""
 	else:
 		#buf = [ [0,0] for i in range(100000) ]
@@ -398,15 +404,21 @@
 	
 	
 </core>
-      <arg type="int" value="0.1" base_name="k" name_space="playSound" name_suffix="0" persistency="666"/>
+      <arg type="float" value="0" base_name="freq" name_space="playSound" name_suffix="0" persistency="666"/>
+      <arg type="float" value="0" base_name="duration" name_space="playSound" name_suffix="0" persistency="666"/>
+      <arg type="NoneType" value="None" base_name="sound" name_space="playSound" name_suffix="0" persistency="666"/>
     </Script>
     <Script base_name="updateKeys" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
       <core>
 	import VR
 	
-	for key in keys:
-		pass
+	for ID,key in VR.keys.items():
+		if key.state &gt; 0.9:
+			if key.sound.getQueuedBuffer() &lt; 2:
+				VR.playSound(key.freq, 0.1, key.sound)
+			key.sound.recycleBuffer()
 </core>
+      <trig type="on_timeout" dev="" state="Pressed" param="0" key="0" base_name="trigger" name_space="__global__" name_suffix="10" persistency="666"/>
     </Script>
   </Scripts>
   <Sockets persistency="666"/>
