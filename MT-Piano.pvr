@@ -6,7 +6,7 @@
         <Object at="0.5 -1 -1" at_dir="0" base_name="Headlight_beacon" from="0 0 0" light="light" name_space="__global__" name_suffix="0" persistency="666" pickable="0" scale="1 1 1" type="LightBeacon" up="0 1 0" visible="1">
           <constraint persistency="666"/>
         </Object>
-        <Object accept_root="1" aspect="1" at="0.160339 8.45 0.103149" at_dir="0" base_name="Default" far="512" fov="1.0472" from="0.476244 14.4849 4.06486" name_space="__global__" name_suffix="0" near="0.1" orthoSize="100" persistency="666" pickable="0" scale="1 1 1" type="Camera" up="0 1 0" visible="1">
+        <Object accept_root="1" aspect="1" at="0.40997 8.45 1.3212" at_dir="0" base_name="Default" far="512" fov="1.0472" from="-1.31194 10.4944 6.42964" name_space="__global__" name_suffix="0" near="0.1" orthoSize="100" persistency="666" pickable="0" scale="1 1 1" type="Camera" up="0 1 0" visible="1">
           <constraint persistency="666"/>
         </Object>
       </Object>
@@ -69,7 +69,7 @@
 		path = VR.pressAnimation[name]
 				
 		def pressAnim(t):
-			print t
+			
 			key.setPose(path.getPose(t))
 			if t == 1: VR.playSound(key.getChildIndex())
 		
@@ -84,9 +84,7 @@
 		path = VR.releaseAnimation[name]
 			
 		def releaseAnim(t):
-			print t
 			key.setPose(path.getPose(t))
-			if t == 1: print 'end'
 		
 		anim = VR.Animation('Release ' + name)
 		anim.setCallback(releaseAnim)
@@ -142,7 +140,7 @@
 	import time	
 	
 	# Light
-	if hasattr(VR, 'Lamp'): 
+	if hasattr(VR, 'lamp'): 
 		VR.lamp.destroy()
 		del VR.lamp
 	
@@ -213,7 +211,7 @@
 	
 	darkMat = VR.Material("BlackKey")
 	darkMat.setAmbient([0.01,0.01,0.01])
-	darkMat.setDiffuse([0.1,0.1,0.1])
+	darkMat.setDiffuse([0.29,0.27,0.25])
 	darkMat.setSpecular([0.99,0.99,0.99])
 	VR.mats["BlackKey"] = darkMat
 </core>
@@ -228,16 +226,15 @@
 	
 	nWhiteKeys = 52
 	nBlackKeys = 36
+	nKeys = 88
 	
 	whiteDim = [0.24, 0.25, 1.5]
-	lipRadius = 0.016
 	blackDim = [0.18, 0.35, 1.0]
+	lipRadius = 0.016
 	dist = 0.015
-	
-	whiteName = ['A', 'H', 'C', 'D', 'E', 'F', 'G']
-	blackName = ['A#', 'ERR', 'C#', 'D#', 'ERR', 'F#', 'G#']
-	
-	freq = 440
+
+
+	keyNote = ['A', 'A#', 'H', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']
 	
 	# Piano Base
 	
@@ -262,54 +259,46 @@
 	base.addChild(stand)
 	
 	
-	# White Keys
-	x = -(whiteDim[0] + dist) * (nWhiteKeys - 1) / 2.0
-	y = 0.325 + whiteDim[1]*0.5
-	z = 0
+	whitePos = [-(whiteDim[0] + dist) * (nWhiteKeys - 1) / 2.0,
+				0.325 + whiteDim[1]*0.5,
+				0]
+				
+	blackPos = [-(whiteDim[0] + dist) * (nWhiteKeys - 2) / 2.0,
+				0.375 + blackDim[1]*0.5,
+				0]
 	
-	w, h, l = whiteDim
+	x=y=z=w=h=l = 0.0
+	whiteKey = False
 	
+	root2 = 2**(1/12)
 	
-	for i in range(nWhiteKeys):
-		# Creates a name according to note and position
-		name = whiteName[i % 7] + "  " + str(i/7) + "  [WK " + str(i) + "]"
+	for i in range(nKeys):
 		
-		k = VR.PianoKey(name, freq, True)
-		kGeom = k.createGeometry(w, h, l, lipRadius)
-								
+		if (i%12) in [1,4,6,9,11]:
+			x,y,z = blackPos
+			w,h,l = blackDim
+			whiteKey = False
+		else:
+			x,y,z = whitePos
+			w,h,l = whiteDim
+			whiteKey = True
+			
+		name = keyNote[i % 12] + " " + str(i/12)
+		freq = root2**(i-49) * 440
+		
+		k = VR.PianoKey(name, freq, whiteKey)
+		kGeom = k.createGeometry(w, h, l, lipRadius)				
 		kGeom.setPosition([x, y, z])
 		
 		base.addChild(kGeom)
-		
 		VR.keys.append(kGeom)
 		
-		x = x + whiteDim[0] + dist
-		
-	# Black Keys
-	x = -(whiteDim[0] + dist) * (nWhiteKeys - 2) / 2.0
-	y = 0.375 + blackDim[1]*0.5
-	z = 0
-	
-	w, h, l = blackDim
-	
-	counter = 0
-	for i in range(nWhiteKeys - 1):
-		if ((i - 1) % 7 != 0 and (i + 3) % 7 != 0):
-			# Creates a name according to note and position
-			name = blackName[i % 7] + " " + str(i/7) + "  [BK " + str(i - counter) + "]"
-			
-			k = VR.PianoKey(name, freq, False)
-			kGeom = k.createGeometry(w, h, l)
-								
-			kGeom.setPosition([x, y, z])
-		
-			base.addChild(kGeom)
-		
-			VR.keys.append(kGeom)
+		if whiteKey:
+			whitePos[0] += w + dist
 		else:
-			counter += 1
-		
-		x = x + whiteDim[0] + dist
+			blackPos[0] += whiteDim[0] + dist
+			if (i%12) in [1,6]:
+				blackPos[0] += whiteDim[0] + dist
 </core>
     </Script>
     <Script base_name="keyDrag" group="Interactions" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
@@ -343,26 +332,6 @@
 		elif target in VR.blackKeys:
 			print target.getName()
 			VR.animBlackKey(target, True)'''
-	
-		'''if dev.getState(): # Button is pressed
-			#if (not key in VR.target or VR.target[key] is None or VR.target[key].getName() != target.getName()):
-			VR.target[key] = target
-			print "VR-target[" + str(key) + "] changed."
-			#target.setColor('blue')
-			
-		else: # Button is released
-			if VR.target[key] is None: return
-	
-			if VR.target[key].getName() == target.getName():
-				VR.animateCube(target)
-				newMat = VR.greenMat if target.getMaterial() == VR.redMat else VR.redMat
-				target.setMaterial(newMat)
-				#target.rotate(0,1,0,0.1)
-			else:
-				VR.switchCubes(VR.target[key], target)
-			
-			VR.target[key] = None
-			'''
 </core>
       <trig type="on_device" dev="mouse" state="Pressed" param="" key="0" base_name="trigger" name_space="__global__" name_suffix="5" persistency="666"/>
       <trig type="on_device" dev="multitouch" state="Pressed" param="" key="-1" base_name="trigger" name_space="__global__" name_suffix="7" persistency="666"/>
@@ -379,11 +348,7 @@
 	
 	if key in VR.target:
 		target = VR.target[key]
-		
-		'''if target in VR.whiteKeys:
-			VR.animWhiteKey(target, False)
-		elif target in VR.blackKeys:
-			VR.animBlackKey(target, False)'''
+
 		if target in VR.keys:
 			VR.animKeyCB(target, False)	
 			
@@ -410,8 +375,7 @@
 		pm = 0
 	
 		T = 0.4
-	
-		print 'k', k
+		
 		f = wc*(1.059463)**(k)
 		VR.piano.synthesize(Ac, f, pc, Am, wm, pm, T)
 	
