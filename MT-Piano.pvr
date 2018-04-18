@@ -6,7 +6,7 @@
         <Object at="0.5 -1 -1" at_dir="0" base_name="Headlight_beacon" from="0 0 0" light="light" name_space="__global__" name_suffix="0" persistency="666" pickable="0" scale="1 1 1" type="LightBeacon" up="0 1 0" visible="1">
           <constraint persistency="666"/>
         </Object>
-        <Object accept_root="1" aspect="1" at="-3.21319 8.54089 -1.90735e-06" at_dir="0" base_name="Default" far="512" fov="1.0472" from="-1.36916 12.021 5.13215" name_space="__global__" name_suffix="0" near="0.1" orthoSize="100" persistency="666" pickable="0" scale="1 1 1" type="Camera" up="0 1 0" visible="1">
+        <Object accept_root="1" aspect="1" at="0.160339 8.45 0.103149" at_dir="0" base_name="Default" far="512" fov="1.0472" from="0.476244 14.4849 4.06486" name_space="__global__" name_suffix="0" near="0.1" orthoSize="100" persistency="666" pickable="0" scale="1 1 1" type="Camera" up="0 1 0" visible="1">
           <constraint persistency="666"/>
         </Object>
       </Object>
@@ -14,7 +14,90 @@
   </Objects>
   <Rendering deferred_rendering="0" frustum_culling="1" fxaa="0" hmdd="0" marker="0" occlusion_culling="0" persistency="666" ssao="0" ssao_kernel="4" ssao_noise="4" ssao_radius="0.02" two_sided="1"/>
   <Scripts persistency="666">
-    <Script base_name="animKey" group="Animations" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+    <Script base_name="PianoKey" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+      <core>
+	import VR
+	
+	class PianoKey:
+		def __init__(self, name, freq, isWhite):
+			self.sound = VR.Sound()
+			self.state = 0
+			self.name = name
+			self.freq = freq
+			self.isWhite = isWhite
+			
+			self.geom = VR.Geometry(name)
+			
+		def createGeometry(self, w, h, l, r=0):
+			self.geom.setPrimitive("Box {} {} {} 1 1 1".format(w,h,l))						
+			self.geom.translate([0, -h*0.5, l*0.5])
+			self.geom.applyTransformation()
+			
+			if self.isWhite:
+				self.geom.setMaterial(VR.mats["WhiteKey"])
+			
+				# Create the rounded lip on the front of the white key
+				lip = VR.Geometry("Lip " + self.name)
+				lip.setPrimitive("Cylinder "+str(w)+" "+str(r)+" 8 1 1 1")
+				lip.setPosition([0, -r, l])
+				lip.setUp([1,0,0])
+				lip.setMaterial(VR.mats["WhiteKey"])
+				
+				self.geom.addChild(lip)
+			else:
+				self.geom.setMaterial(VR.mats["BlackKey"])
+
+			return self.geom
+			
+	return PianoKey(name, freq, isWhite)
+		
+</core>
+      <arg type="str" value="0" base_name="name" name_space="PianoKey" name_suffix="0" persistency="666"/>
+      <arg type="int" value="0" base_name="freq" name_space="PianoKey" name_suffix="0" persistency="666"/>
+      <arg type="int" value="0" base_name="isWhite" name_space="PianoKey" name_suffix="0" persistency="666"/>
+    </Script>
+    <Script base_name="animKeyCB" group="Animations" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+      <core>
+	import VR
+	
+	name = key.getName()
+	
+	if pressed:
+		if name not in VR.pressAnimation:
+			VR.createAnimPath(key, pressed)
+			
+		path = VR.pressAnimation[name]
+				
+		def pressAnim(t):
+			print t
+			key.setPose(path.getPose(t))
+			if t == 1: VR.playSound(key.getChildIndex())
+		
+		anim = VR.Animation('Press ' + name)
+		anim.setCallback(pressAnim)
+		anim.setDuration(0.1)
+		anim.start()
+	else:
+		if name not in VR.releaseAnimation:
+			VR.createAnimPath(key, pressed)
+		
+		path = VR.releaseAnimation[name]
+			
+		def releaseAnim(t):
+			print t
+			key.setPose(path.getPose(t))
+			if t == 1: print 'end'
+		
+		anim = VR.Animation('Release ' + name)
+		anim.setCallback(releaseAnim)
+		anim.setDuration(0.1)
+		anim.start()
+
+</core>
+      <arg type="VRPyTransformType" value="0" base_name="key" name_space="animKeyCB" name_suffix="0" persistency="666"/>
+      <arg type="int" value="0" base_name="pressed" name_space="animKeyCB" name_suffix="0" persistency="666"/>
+    </Script>
+    <Script base_name="createAnimPath" group="Animations" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
       <core>
 	import VR
 	
@@ -23,113 +106,35 @@
 	pos0 = pose.pos()
 	dir0 = pose.dir()
 	up0 = pose.up()
-#	zStart = cDir[2]
-
+	
 	dirNormal  = [0,0,-1]
 	dirPressed = [0,0.1, -1]
 	
+	dirHalf = [0,0,0]
+	for i in range(3):
+		dirHalf[i] = (dirNormal[i] + dirPressed[i]) * 0.5
+	#dirHalf = [(dirNormal[i] + dirPressed[i]) * 0.5 for i in range(3)]
+			
+	
+	
 	path = VR.Path()
 	if pressed:
-		if name not in VR.pressAnimation:
-			
-			path.addPoint(pos0, dirNormal, [0,0,0], up0)
-		
-			dirHalf = [0,0,0]
-			for i in range(3):
-				dirHalf[i] = (dirNormal[i] + dirPressed[i]) * 0.5
-			
-			path.addPoint(pos0, dirHalf, [0,0,0], up0)
-		
-			path.addPoint(pos0, dirPressed, [0,0,0], up0)
-		
-			path.compute(2)
-		
-			VR.pressAnimation[name] = path
-		else:
-			path = VR.pressAnimation[name]
-	else:
-		if name not in VR.releaseAnimation:
-			path = VR.Path()
-			path.addPoint(pos0, dirPressed, [0,0,0], up0)
-		
-			dirHalf = [0,0,0]
-			for i in range(3):
-				dirHalf[i] = (dirNormal[i] + dirPressed[i]) * 0.5
-			
-			path.addPoint(pos0, dirHalf, [0,0,0], up0)
-		
-			path.addPoint(pos0, dirNormal, [0,0,0], up0)
-		
-			path.compute(2)
-		
-			VR.releaseAnimation[name] = path
-		else:
-			path = VR.releaseAnimation[name]
-		
-	#TODO: doAnimation
-	#key.animate(path, duration, offset, doOrient?, doLoop)
-	key.animate(path, 0.1, 0, True, False)
-		
-	'''
-	if pressed:
-		path.addPoint(pos0, dir0, [0,0,0], up0)
-	
-		dirHalf = [0,0,0]
-		for i in range(3):
-			dirHalf[i] = (dir0[i] + dirPressed[i]) * 0.5
-		
+		path.addPoint(pos0, dirNormal, [0,0,0], up0)	
 		path.addPoint(pos0, dirHalf, [0,0,0], up0)
-	
 		path.addPoint(pos0, dirPressed, [0,0,0], up0)
-	
+		
 		path.compute(2)
-		animDist = abs(dir0[1] - dirPressed[1])
+		VR.pressAnimation[name] = path
 	else:
-		path.addPoint(pos0, dir0, [0,0,0], up0)
-	
-		dirHalf = [0,0,0]
-		for i in range(3):
-			dirHalf[i] = (dirNormal[i] + dir0[i]) * 0.5
-		
+		path.addPoint(pos0, dirPressed, [0,0,0], up0)
 		path.addPoint(pos0, dirHalf, [0,0,0], up0)
-	
 		path.addPoint(pos0, dirNormal, [0,0,0], up0)
-	
+		
 		path.compute(2)
-		animDist = abs(dir0[1] - dirNormal[1])
-		
-	#key.animate(path, duration, offset, doOrient?, doLoop)
-	key.animate(path, max(animDist, 0.01), 0, True, False)
-	'''	
-		
-	'''
-	def callback_animate(dev, torus):
-	import VR
-	
-	if not hasattr(VR, 'p2') or True:	
-		VR.p2 = VR.Path()
-		d = 1.2
-		# position, direction, color, up-vector
-		VR.p2.addPoint([2.5,0,0], [0,0,d], [0,0,0], [0,1,0])
-		VR.p2.addPoint([0,0,2.5], [-d,0,0], [0,0,0], [0,1,0])
-		VR.p2.addPoint([-2.5,0,0], [0,0,-d], [0,0,0], [0,1,0])
-		VR.p2.addPoint([0,0,-2.5], [d,0,0], [0,0,0], [0,1,0])
-		VR.p2.close()
-		VR.p2.compute(80) # do not forget this!
-	
-	def myAnim(t):
-		print t
-		p = VR.p2.getPose(t)
-		torus.setPose(p)
-		if t == 1: print 'end'
-		
-	a = VR.Animation('myAnim')
-	a.setCallback(myAnim)
-	a.setDuration(1)
-	a.start()'''
+		VR.releaseAnimation[name] = path
 </core>
-      <arg type="VRPyTransformType" value="0" base_name="key" name_space="animKey" name_suffix="0" persistency="666"/>
-      <arg type="int" value="0" base_name="pressed" name_space="animKey" name_suffix="0" persistency="666"/>
+      <arg type="VRPyTransformType" value="0" base_name="key" name_space="createAnimPath" name_suffix="0" persistency="666"/>
+      <arg type="int" value="0" base_name="pressed" name_space="createAnimPath" name_suffix="0" persistency="666"/>
     </Script>
     <Script base_name="init" group="Inits" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
       <core>
@@ -138,18 +143,18 @@
 	
 	# Light
 	if hasattr(VR, 'Lamp'): 
-		VR.Lamp.destroy()
-		del VR.Lamp
+		VR.lamp.destroy()
+		del VR.lamp
 	
-	VR.Lamp = VR.Light('Lamp', 'light')
-	#VR.Lamp.toggleShadows(True)
-	#VR.Lamp.setOn(False)
+	VR.lamp = VR.Light('Lamp', 'light')
+	#VR.lamp.toggleShadows(True)
+	#VR.lamp.setOn(False)
 	beacon = VR.LightBeacon('Lamp_Beacon')
 	beacon.setTransform([0, 20, 0], [0, -1, 0], [0,1,0])
-	VR.Lamp.setBeacon(beacon)
+	VR.lamp.setBeacon(beacon)
 
-	VR.Scene = VR.Object('Scene')
-	VR.Lamp.addChild(VR.Scene)
+	VR.scene = VR.Object('Scene')
+	VR.lamp.addChild(VR.scene)
 	
 	
 	# Set up camera
@@ -167,8 +172,7 @@
 	VR.pressAnimation = {}
 	VR.releaseAnimation = {}
 	
-	VR.whiteKeys = []
-	VR.blackKeys = []
+	VR.keys = []
 
 	
 	# Floor
@@ -176,34 +180,13 @@
 	floor.setPrimitive("Plane 20 20 1 1")
 	floor.setTransform([0, 0, 0], [0, 1, 0], [0,0,1])
 	floor.setColor("brown")
-	VR.Scene.addChild(floor)
+	VR.scene.addChild(floor)
 
 	
 	VR.initPiano()
-		
-		
-	'''
-	for i in range(Nx):
-		h = 0.2*(1+i)
-		z += h/2
-		
-		for j in range(Ny):
-			box = VR.Geometry("Box"+str(i)+","+str(j))
-			w = 0.2*(1+j)
-			x += w/2
-			#box.setPrimitive("Box 0.1 0.1 0.1 1 1 1")
-			box.setPrimitive("Box "+str(w)+" 1 "+str(h)+" 1 1 1")
-			box.setPosition([x,0,z])
-			box.setMaterial(VR.redMat)
-			#box.setPickable(True)
-			VR.Scene.addChild(box)
-			VR.boxes.append(box)
-			
-			x += w/2 + d
-			
-		x = -0.6
-		z += h/2 + d
-'''
+	
+	VR.piano = VR.Sound()
+
 	
 	
 </core>
@@ -254,6 +237,8 @@
 	whiteName = ['A', 'H', 'C', 'D', 'E', 'F', 'G']
 	blackName = ['A#', 'ERR', 'C#', 'D#', 'ERR', 'F#', 'G#']
 	
+	freq = 440
+	
 	# Piano Base
 	
 	w = (nWhiteKeys + 2) * (whiteDim[0] + dist)
@@ -268,7 +253,7 @@
 	base.setPosition([x, 8.0, -z])
 	base.setMaterial(VR.mats["Piano"])
 	
-	VR.Scene.addChild(base)
+	VR.scene.addChild(base)
 	
 	stand = VR.Geometry("Piano Stand")
 	stand.setPrimitive("Box " + str(w) + " 10.0 " + str(0.5*l) + " 1 1 1")
@@ -284,30 +269,19 @@
 	
 	w, h, l = whiteDim
 	
+	
 	for i in range(nWhiteKeys):
 		# Creates a name according to note and position
 		name = whiteName[i % 7] + "  " + str(i/7) + "  [WK " + str(i) + "]"
-		whiteKey = VR.Geometry(name)
-		whiteKey.setPrimitive("Box " + str(w) +" "+ str(h) +" "+ str(l) +" 1 1 1")
-											
-		whiteKey.translate([0, -h*0.5, l*0.5])
-		whiteKey.applyTransformation()
-					
-		whiteKey.setPosition([x, y, z])
-		whiteKey.setMaterial(VR.mats["WhiteKey"])
 		
-		# the rounded lip on the front of the white key
-		lip = VR.Geometry("Lip " + str(i))
-		lip.setPrimitive("Cylinder "+str(w)+" "+str(lipRadius)+" 8 1 1 1")
-		lip.setPosition([0, -lipRadius, z+l])
-		lip.setUp([1,0,0])
-		lip.setMaterial(VR.mats["WhiteKey"])
+		k = VR.PianoKey(name, freq, True)
+		kGeom = k.createGeometry(w, h, l, lipRadius)
+								
+		kGeom.setPosition([x, y, z])
 		
-		whiteKey.addChild(lip)
+		base.addChild(kGeom)
 		
-		base.addChild(whiteKey)
-		
-		VR.whiteKeys.append(whiteKey)
+		VR.keys.append(kGeom)
 		
 		x = x + whiteDim[0] + dist
 		
@@ -316,24 +290,22 @@
 	y = 0.375 + blackDim[1]*0.5
 	z = 0
 	
+	w, h, l = blackDim
+	
 	counter = 0
 	for i in range(nWhiteKeys - 1):
 		if ((i - 1) % 7 != 0 and (i + 3) % 7 != 0):
 			# Creates a name according to note and position
 			name = blackName[i % 7] + " " + str(i/7) + "  [BK " + str(i - counter) + "]"
-			blackKey = VR.Geometry(name)
-			blackKey.setPrimitive("Box " + str(blackDim[0]) + " " + str(blackDim[1])
-												+ " " + str(blackDim[2]) + " 1 1 1")
-												
-			blackKey.translate([0, -blackDim[1]*0.5, blackDim[2]*0.5])
-			blackKey.applyTransformation()
 			
-			blackKey.setPosition([x, y, z])
-			blackKey.setMaterial(VR.mats["BlackKey"])
+			k = VR.PianoKey(name, freq, False)
+			kGeom = k.createGeometry(w, h, l)
+								
+			kGeom.setPosition([x, y, z])
 		
-			base.addChild(blackKey)
-			
-			VR.blackKeys.append(blackKey)
+			base.addChild(kGeom)
+		
+			VR.keys.append(kGeom)
 		else:
 			counter += 1
 		
@@ -361,9 +333,9 @@
 		target = dev.getIntersected()
 		VR.target[key] = target
 		
-		if target in VR.whiteKeys or target in VR.blackKeys:
+		if target in VR.keys:
 			print target.getName()
-			VR.animKey(target, True)
+			VR.animKeyCB(target, True)
 		
 		'''if target in VR.whiteKeys: 
 			print target.getName()
@@ -412,14 +384,65 @@
 			VR.animWhiteKey(target, False)
 		elif target in VR.blackKeys:
 			VR.animBlackKey(target, False)'''
-		if target in VR.whiteKeys or target in VR.blackKeys:
-			VR.animKey(target, False)	
+		if target in VR.keys:
+			VR.animKeyCB(target, False)	
 			
 		VR.target[key] = None
 	
 </core>
       <trig type="on_device" dev="mouse" state="Released" param="" key="0" base_name="trigger" name_space="__global__" name_suffix="6" persistency="666"/>
       <trig type="on_device" dev="multitouch" state="Released" param="" key="-1" base_name="trigger" name_space="__global__" name_suffix="8" persistency="666"/>
+    </Script>
+    <Script base_name="playSound" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+      <core>
+	import VR
+	
+	from math import sin
+	
+	def playKey(k):
+		# A4 440
+		Ac = 32760
+		wc = 440
+		pc = 0
+	
+		Am = 0
+		wm = 32
+		pm = 0
+	
+		T = 0.4
+	
+		print 'k', k
+		f = wc*(1.059463)**(k)
+		VR.piano.synthesize(Ac, f, pc, Am, wm, pm, T)
+	
+	playKey(k)
+	"""
+	else:
+		#buf = [ [0,0] for i in range(100000) ]
+		#for i in range(100):
+		#	buf[450+i] = [2,0]
+		#buf[300] = [300,32760]
+		#buf[300] = [300,1000]
+		freqs = []
+		freqs.append([100,32760])
+		freqs.append([200,32760])
+		freqs.append([300,32760])
+		freqs.append([400,32760])
+		freqs.append([500,32760])
+		VR.piano.synthBuffer(freqs,1)
+	"""
+	
+	
+</core>
+      <arg type="int" value="0.1" base_name="k" name_space="playSound" name_suffix="0" persistency="666"/>
+    </Script>
+    <Script base_name="updateKeys" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+      <core>
+	import VR
+	
+	for key in keys:
+		pass
+</core>
     </Script>
   </Scripts>
   <Sockets persistency="666"/>
