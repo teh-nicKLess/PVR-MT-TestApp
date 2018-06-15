@@ -359,7 +359,8 @@
 	'''
 	Evaluated regurlarly. Tests for each piano key, that is currently pressed
 	if the finger pressing it is still intersecting with the appropriate key.
-	If not the former key is released and 
+	If not the former key is released and, if so, a newly intersected key is 
+	pressed.
 	'''
 	
 	for key,target in VR.target.items():
@@ -489,6 +490,11 @@
     <Script base_name="updateKeys" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
       <core>
 	import VR
+	
+	'''
+	Adds sound to the buffer to be played if appropriate key is pressed
+	over 90%
+	'''
 	
 	for ID,key in VR.keys.items():
 		if key.state &gt; 0.9:
