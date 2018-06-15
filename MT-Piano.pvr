@@ -371,7 +371,7 @@
 			relKey = target[1].getName()
 			if relKey in VR.keys:
 				VR.animKeyCB(VR.keys[relKey], False)
-			
+			VR.target[key] = None
 			
 			dev.intersect(VR.getRoot(), True, caster, [0,0,-1])
 			
