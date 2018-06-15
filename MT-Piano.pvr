@@ -6,7 +6,7 @@
         <Object at="0.5 -1 -1" at_dir="0" base_name="Headlight_beacon" from="0 0 0" light="light" name_space="__global__" name_suffix="0" persistency="666" pickable="0" scale="1 1 1" type="LightBeacon" up="0 1 0" visible="1">
           <constraint persistency="666"/>
         </Object>
-        <Object accept_root="1" aspect="1" at="0 8 -1" at_dir="1" base_name="Default" far="512" fov="1.0472" from="0 18 3" name_space="__global__" name_suffix="0" near="0.1" orthoSize="100" persistency="666" pickable="0" scale="1 1 1" type="Camera" up="0 1 0" visible="1">
+        <Object accept_root="1" aspect="1" at="-0.132065 8.45 0.776441" at_dir="0" base_name="Default" far="512" fov="1.0472" from="-0.0776171 18.6999 11.8326" name_space="__global__" name_suffix="0" near="0.1" orthoSize="100" persistency="666" pickable="0" scale="1 1 1" type="Camera" up="0 1 0" visible="1">
           <constraint persistency="666"/>
         </Object>
       </Object>
@@ -189,9 +189,8 @@
 	VR.initPiano()
 	
 	VR.piano = VR.Sound()
-
 	
-	
+	VR.initViews()
 </core>
       <trig type="on_device" dev="keyboard" state="Pressed" param="" key="114" base_name="trigger" name_space="__global__" name_suffix="5" persistency="666"/>
       <trig type="on_scene_load" dev="" state="Pressed" param="" key="0" base_name="trigger" name_space="__global__" name_suffix="7" persistency="666"/>
@@ -239,6 +238,8 @@
 	dist = 0.015
 
 
+	## Formula for frequencies had numeric problems
+	## Following values are taken from wikipedia.org/wiki/Piano_key_frequencies
 	keyNote = ['A', 'A#', 'H', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']
 	frequencies = [27.5000, 29.1352, 30.8677, 32.7032, 34.6478, 36.7081,
 					38.8909, 41.2034, 43.6535, 46.2493, 48.9994, 51.9131,
@@ -324,9 +325,40 @@
 				blackPos[0] += whiteDim[0] + dist
 </core>
     </Script>
+    <Script base_name="initViews" group="Inits" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+      <core>
+	import VR
+	
+	''' Reset the view projections for the holobench views
+	to usable values on startup'''
+	
+	## Setup for 4 views; HoloBench 2x2
+	if VR.getSetup().getView(3) is not None:
+		pose = VR.Pose([0,0,-1], [0,0,1], [0,-1,0])
+
+		VR.getSetup().getView(0).setPose(pose)
+		VR.getSetup().getView(1).setPose(pose)
+	
+		pose.setUp([0,1,0])
+	
+		VR.getSetup().getView(2).setPose(pose)
+		VR.getSetup().getView(3).setPose(pose)
+		
+	## Setup for a single view; HoloBench 1x1 or Dimension
+	else:
+		pose = VR.Pose([0,0,-1], [0,0,1], [0,1,0])
+		VR.getSetup().getView(0).setPose(pose)
+		pass
+	
+</core>
+    </Script>
     <Script base_name="keyDrag" group="Interactions" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
       <core>
 	import VR
+	
+	'''
+	Evaluated regurlarly. 
+	'''
 	
 	for key,target in VR.target.items():
 		if target == None:
@@ -358,29 +390,28 @@
       <core>
 	import VR
 
-	print dev.getName()
-	
+	'''
+	Executed for each finger at start of touch event. Tests if the beacon of 
+	the finger is intersecting a piano key, and will animate the key accordingly
+	'''
+
 	key = dev.getKey()
 
 	#print dev.getName() + "["+ str(key) +"]: " + ("Pressed" if dev.getKeyState(key) else "Released")
 	#print "Position: " + str(dev.getBeacon().getDir())
 	
 	caster = dev.getBeacon(key)
+	## caster has to be specified, otherwise intersect would be determined using
+	## the default beacon (the one for key 0)
 	if dev.intersect(VR.getRoot(), False, caster, [0,0,-1]):
 		target = dev.getIntersected()
 		
+		## Remember for each finger which key it presses
 		name = target.getName()
 		if name in VR.keys:
 			print name
 			VR.target[key] = (dev, target)
 			VR.animKeyCB(VR.keys[name], True)
-		
-		'''if target in VR.whiteKeys: 
-			print target.getName()
-			VR.animWhiteKey(target, True)
-		elif target in VR.blackKeys:
-			print target.getName()
-			VR.animBlackKey(target, True)'''
 </core>
       <trig type="on_device" dev="mouse" state="Pressed" param="" key="0" base_name="trigger" name_space="__global__" name_suffix="5" persistency="666"/>
       <trig type="on_device" dev="multitouch" state="Pressed" param="" key="-1" base_name="trigger" name_space="__global__" name_suffix="7" persistency="666"/>
@@ -388,13 +419,16 @@
     <Script base_name="keyRelease" group="Interactions" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
       <core>
 	import VR
-
+	
+	'''
+	Executed for each finger at end of touch event. Tests if the finger was on
+	a piano key previous to release. If so will animate the key accordingly.
+	'''
 	
 	key = dev.getKey()
 
 
 	caster = dev.getBeacon(key)
-	
 	if key in VR.target and VR.target[key] is not None:
 		target = VR.target[key][1]
 			
@@ -462,6 +496,55 @@
 			key.sound.recycleBuffer()
 </core>
       <trig type="on_timeout" dev="" state="Pressed" param="0" key="0" base_name="trigger" name_space="__global__" name_suffix="10" persistency="666"/>
+    </Script>
+    <Script base_name="viewSetup" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+      <core>
+	import VR
+	
+	'''
+	Attempt to set up multiple cameras for independent views 
+	of the four viewports in the holobench setup. Does not 
+	really work.'''
+	
+	
+	if VR.find("CamBox"):
+		VR.find("CamBox").destroy()
+		'''for cam in VR.cams:
+			cam.destroy()
+		del VR.cams'''
+		
+		
+	# View IDs
+	# 0-3:  TV views
+	# 4:	Computer Screen
+	
+	light = VR.find("light")
+	
+	'''for x in range(4):		
+		view = VR.getSetup().getView(x)
+		view.setCamera(VR.find("Setup"))'''
+	
+	
+	camBox = VR.Object("CamBox", "light")
+	
+	# Create four cameras named 'Cam_0' to 'Cam_4'
+	VR.cams = [VR.Camera("Cam_" + str(x), "CamBox") for x in range(4)]
+	
+	for x in range(4):
+		VR.cams[x].setPosition([-12 + 8*x, 15, 7])
+		VR.cams[x].setAt([0,5,0])
+		
+		view = VR.getSetup().getView(x)
+		view.setCamera(VR.cams[x])
+	
+	
+	VR.getSetup().getView(4).setCamera(VR.find("Default"))
+	#VR.find("Default").activate()
+	
+	
+	## getWindow() crashes PVR
+	#window  = VR.getSetup().getWindow(0)
+</core>
     </Script>
   </Scripts>
   <Sockets persistency="666"/>
