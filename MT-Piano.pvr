@@ -6,7 +6,7 @@
         <Object at="0.5 -1 -1" at_dir="0" base_name="Headlight_beacon" from="0 0 0" light="light" name_space="__global__" name_suffix="0" persistency="666" pickable="0" scale="1 1 1" type="LightBeacon" up="0 1 0" visible="1">
           <constraint persistency="666"/>
         </Object>
-        <Object accept_root="1" aspect="1" at="-0.132065 8.45 0.776441" at_dir="0" base_name="Default" far="512" fov="1.0472" from="-0.0776171 18.6999 11.8326" name_space="__global__" name_suffix="0" near="0.1" orthoSize="100" persistency="666" pickable="0" scale="1 1 1" type="Camera" up="0 1 0" visible="1">
+        <Object accept_root="1" aspect="1" at="-0.132065 8.45 0.776441" at_dir="0" base_name="Default" far="512" fov="1.0472" from="-0.108101 12.9612 5.64254" name_space="__global__" name_suffix="0" near="0.1" orthoSize="100" persistency="666" pickable="0" scale="1 1 1" type="Camera" up="0 1 0" visible="1">
           <constraint persistency="666"/>
         </Object>
       </Object>
@@ -357,7 +357,9 @@
 	import VR
 	
 	'''
-	Evaluated regurlarly. 
+	Evaluated regurlarly. Tests for each piano key, that is currently pressed
+	if the finger pressing it is still intersecting with the appropriate key.
+	If not the former key is released and 
 	'''
 	
 	for key,target in VR.target.items():
@@ -371,7 +373,6 @@
 			relKey = target[1].getName()
 			if relKey in VR.keys:
 				VR.animKeyCB(VR.keys[relKey], False)
-			VR.target[key] = None
 			
 			dev.intersect(VR.getRoot(), True, caster, [0,0,-1])
 			
