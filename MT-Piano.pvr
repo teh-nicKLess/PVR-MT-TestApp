@@ -2,11 +2,11 @@
 <Scene base_name="MT Piano" name_space="Scene" name_suffix="0" persistency="666">
   <Objects>
     <Object base_name="Root" name_space="__global__" name_suffix="0" persistency="666" pickable="0" type="Object" visible="1">
-      <Object ambient="0.3 0.3 0.3 1" base_name="light" beacon="Headlight_beacon" diffuse="1 1 1 1" lightType="directional" name_space="__global__" name_suffix="0" on="1" persistency="666" photometricMap="" pickable="0" shadow="0" shadowColor="0.1 0.1 0.1 1" shadowMapRes="2048" specular="0.1 0.1 0.1 1" type="Light" visible="1">
+      <Object ambient="0.3 0.3 0.3 1" base_name="light" beacon="Headlight_beacon" diffuse="1 1 1 1" lightType="directional" name_space="__global__" name_suffix="0" on="1" persistency="666" photometricMap="" pickable="0" shadow="0" shadowColor="0.1 0.1 0.1 1" shadowMapRes="2048" shadowVolume="1e+06 1e+06 1e+06 -1e+06 -1e+06 -1e+06 1" specular="0.1 0.1 0.1 1" type="Light" visible="1">
         <Object at="0.5 -1 -1" at_dir="0" base_name="Headlight_beacon" from="0 0 0" light="light" name_space="__global__" name_suffix="0" persistency="666" pickable="0" scale="1 1 1" type="LightBeacon" up="0 1 0" visible="1">
           <constraint persistency="666"/>
         </Object>
-        <Object accept_root="1" aspect="1" at="-0.132065 8.45 0.776441" at_dir="0" base_name="Default" far="512" fov="1.0472" from="-0.108101 12.9612 5.64254" name_space="__global__" name_suffix="0" near="0.1" orthoSize="100" persistency="666" pickable="0" scale="1 1 1" type="Camera" up="0 1 0" visible="1">
+        <Object accept_root="1" aspect="1" at="0 8 -1" at_dir="0" base_name="Default" far="512" fov="1.0472" from="0 18 3" name_space="__global__" name_suffix="0" near="0.1" orthoSize="100" persistency="666" pickable="0" scale="1 1 1" type="Camera" up="0 1 0" visible="1">
           <constraint persistency="666"/>
         </Object>
       </Object>
@@ -403,10 +403,66 @@
 	#print "Position: " + str(dev.getBeacon().getDir())
 	
 	caster = dev.getBeacon(key)
+	
+	
+	#####################################################################
+	#####################################################################
+	"""Versuch aus den Touch Events innerhalb von Python herauszufinden 
+	in welcher View das Event ausgeführt wird. Funktioniert nicht, da die
+	cFrom-Daten schon davor auf -1;1 bzw-ähnloches angepasst werden für 
+	jeden Port. """
+	cFrom = caster.getFrom()
+	
+	views = []
+	
+	for i in range(50):
+		view = VR.getSetup().getView(i)
+		if view is None:
+			break
+			
+		views.append(view)
+		
+	# TODO: view.getArea() no Python binding implemented
+	# hack for four equally sized views
+	viewIndex = 0
+	if dev.getName() == "mouse":
+		viewIndex = 4
+	else:
+		if cFrom[0] &gt; 0:
+			# event on right half of screen
+			viewIndex += 1
+		if cFrom[1] &lt; 0:
+			# eved on lower half of screen
+			viewIndex += 2
+	
+	print "BeaconFrom: " + str(cFrom)
+	print "ViewIndex: " + str(viewIndex)
+	
+	
+	"""Versuch die Kamera eines identifizierten Viewports aktiv zu schalten
+	bisher ohne Erfolg. """
+	if VR.activeTouch == False and viewIndex == 4:
+		print "now!"
+		VR.activeTouch = True
+		
+		cam = VR.find("Default")
+		setup = VR.getSetup()
+		#setup.rebaseDrag(cam)
+		setup.getView(4).setCamera(cam)
+		
+	# TODO: view.getCamera() no Python binding implemented
+	
+	
+	#####################################################################
+	#####################################################################
+
+	
 	## caster has to be specified, otherwise intersect would be determined using
 	## the default beacon (the one for key 0)
 	if dev.intersect(VR.getRoot(), False, caster, [0,0,-1]):
 		target = dev.getIntersected()
+		
+#		print dev.getIntersection()
 		
 		## Remember for each finger which key it presses
 		name = target.getName()
@@ -440,6 +496,8 @@
 			
 		
 	VR.target[key] = None
+	
+	VR.activeTouch = False
 </core>
       <trig type="on_device" dev="mouse" state="Released" param="" key="0" base_name="trigger" name_space="__global__" name_suffix="6" persistency="666"/>
       <trig type="on_device" dev="multitouch" state="Released" param="" key="-1" base_name="trigger" name_space="__global__" name_suffix="8" persistency="666"/>
@@ -487,24 +545,7 @@
       <arg type="float" value="0" base_name="duration" name_space="playSound" name_suffix="0" persistency="666"/>
       <arg type="NoneType" value="None" base_name="sound" name_space="playSound" name_suffix="0" persistency="666"/>
     </Script>
-    <Script base_name="updateKeys" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
-      <core>
-	import VR
-	
-	'''
-	Adds sound to the buffer to be played if appropriate key is pressed
-	over 90%
-	'''
-	
-	for ID,key in VR.keys.items():
-		if key.state &gt; 0.9:
-			if key.sound.getQueuedBuffer() &lt; 2:
-				VR.playSound(key.freq, 0.1, key.sound)
-			key.sound.recycleBuffer()
-</core>
-      <trig type="on_timeout" dev="" state="Pressed" param="0" key="0" base_name="trigger" name_space="__global__" name_suffix="10" persistency="666"/>
-    </Script>
-    <Script base_name="viewSetup" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+    <Script base_name="setupCameras" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
       <core>
 	import VR
 	
@@ -543,14 +584,51 @@
 		
 		view = VR.getSetup().getView(x)
 		view.setCamera(VR.cams[x])
+		
+		print "View " + str(x)
+		print view.getPose().pos()
+		print view.getSize()
 	
+	# flip the up direction of camera 0 and 1 (upper side of TV)
+	for x in range(2):
+		VR.cams[x].setUp([0,-1,0])
 	
 	VR.getSetup().getView(4).setCamera(VR.find("Default"))
 	#VR.find("Default").activate()
 	
+	VR.activeTouch = False
 	
 	## getWindow() crashes PVR
 	#window  = VR.getSetup().getWindow(0)
+</core>
+    </Script>
+    <Script base_name="updateKeys" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+      <core>
+	import VR
+	
+	'''
+	Adds sound to the buffer to be played if appropriate key is pressed
+	over 90%
+	'''
+	
+	for ID,key in VR.keys.items():
+		if key.state &gt; 0.9:
+			if key.sound.getQueuedBuffer() &lt; 2:
+				VR.playSound(key.freq, 0.1, key.sound)
+			key.sound.recycleBuffer()
+</core>
+      <trig type="on_timeout" dev="" state="Pressed" param="0" key="0" base_name="trigger" name_space="__global__" name_suffix="10" persistency="666"/>
+    </Script>
+    <Script base_name="visibleBeacons" group="no group" name_space="__script__" name_suffix="0" persistency="666" server="server1" type="Python">
+      <core>
+	import VR
+	
+	allB = VR.find("multitouch_beacons")
+	
+	for b in allB.getChildren():
+		bGeom = b.getChild(0)
+		vis = bGeom.isVisible()
+		bGeom.setVisible(not vis)
 </core>
     </Script>
   </Scripts>
